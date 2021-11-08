@@ -2,7 +2,7 @@
 
 본 가이드에서는 GitLab 프로젝트를 생성하고 기존 CVS/SVN으로 버전관리하고 있는 코드베이스를 GitLab에 등록(Push)하는 방법을 설명합니다.
 
-본 가이드에 따라 코드베이스를 GitLab에 Push하기 전에 [Git 설치 및 구성](01_Setup_Git) 문서를 참고하여 로컬 PC에 Git 사용 환경을 구성하여야 합니다.
+본 가이드에 따라 코드베이스를 GitLab에 Push하기 전에 [Git 설치 및 구성](01_Setup_Git.md) 문서를 참고하여 로컬 PC에 Git 사용 환경을 구성하여야 합니다.
 
 ## GitLab 프로젝트 생성
 
@@ -186,5 +186,11 @@ build/
   ```bash
   git push -u origin master
   ```
+
+  > `git branch` 명령을 실행하여 현재 브랜치가 `master`가 아니면, `git branch -m master` 명령을 실행하여 `master` 브랜치로 변경합니다. Git 설치 시 옵션에 따라 로컬 저장소의 기본 브랜치가 `main`일 수 있습니다.
+
+  > **HTTPS** 프로토콜을 사용하여 처음으로 GitLab에 Push하는 경우, 아래 이미지와 같이 Git Credential Manager 창이 나타납니다. GitLab 계정과 패스워드를 입력하고 **확인** 버튼을 클릭합니다.
+
+  ![Git Credential Manager](images/02/git-credential-manager.jpg "Git Credential Manager")
 
 * GitLab 프로젝트의 Repository에 코드베이스가 업로드된 것을 확인할 수 있습니다.
