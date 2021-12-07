@@ -117,204 +117,9 @@ Linux Shell에서 명령어를 실행하여 빌드하고 패키징하려면 Java
 
 Java 8 이상의 프로젝트는 Gradle, Java 7 이상에서는 Maven 사용을 권장하며, 그 외 의존성 라이브러리의 버전 정보 확인이 어렵거나 오래된 JDK이면 Ant를 사용하십시오.
 
-### Ant 빌드 구성
 
-[Apache Ant](https://ant.apache.org/)는 전통적인 Java 빌드 도구로, [Binary Distributions](https://ant.apache.org/bindownload.cgi) 페이지에서 다운로드 할 수 있습니다.
 
-현재 Apache Ant 1.9.16 및 1.10.12가 가장 최신의 사용 가능한 버전 입니다.
-
-* 1.9.16 release - 런타임 시 최소 Java 5 필요
-* 1.10.12 release - 런타임 시 최소 Java 8 필요
-
-Ant로 Java 애플리케이션을 빌드하려면 `build.xml` 파일이 필요합니다.  
-Apache Ant의 빌드 파일은 XML로 작성됩니다. 각 빌드 파일에는 하나의 `project`와 하나 이상의(기본) `target`이 포함됩니다. Target에는 `task` 요소가 포함됩니다.
-
-#### Project
-
-`project`은 세 가지 속성이 있습니다.
-
-* **name** : 프로젝트의 이름
-* **default** : `ant` 명령 실행 시 `target`을 지정하지 않은 경우 사용할 기본 `target` (예제에서는 `compile` Target이 실행)
-* **basedir** : 모든 경로(Path) 계산이 수행되는 기본 디렉토리
-
-선택적으로 프로젝트에 대한 설명을 최상위 `<description>` 요소로 제공할 수 있습니다.
-
-```xml
-<project name="spring-mvc-with-ant" default="compile" basedir=".">
-
-    <description>
-        Simple Ant build file
-    </description>
-...
-```
-
-#### Properties
-
-속성(property)은 빌드 프로세스를 커스터마이징하거나, 빌드 파일 내에서 반복적으로 사용되는 문자열을 변수처럼 지정하여 사용하는 기능 입니다.
-
-* **src.dir** : Java 소스 파일들이 있는 프로젝트의 소스 디렉토리
-* **resources.dir** : `*.xml` 또는 `*.properties`와 같은 파일들이 있는 프로젝트의 리소스 디렉토리
-* **web.dir** : CSS, JS, 이미지 파일들이 있는 Web 애플리케이션의 루트 디렉토리
-* **webinf.dir** : `web.xml`, `*-servlet.xml`, JSP 파일들이 있는 `WEB-INF` 디렉토리
-* **lib.dir** : Java 소스에서 참조하는 라이브러리 Jar 파일들이 위치하는 디렉토리
-* **classes.dir** : Java 소스 컴파일 후 `*.class` 파일들이 생성되는 디렉토리
-* **dist.dir** : 배포를 위한 패키징 결과물 Zip 또는 Jar/War 파일들이 생성되는 디렉토리
-
-```xml
-...
-    <property name="src.dir" location="src/main/java"/>
-    <property name="resources.dir" location="src/main/resources"/>
-    <property name="web.dir" location="WebContent"/>
-    <property name="webinf.dir" location="${web.dir}/WEB-INF"/>
-    <property name="lib.dir" location="${webinf.dir}/lib"/>
-    <property name="classes.dir" location="${webinf.dir}/classes"/>
-    <property name="dist.dir" location="dist"/>
-
-    <property name="debug.mode" value="true"/>
-    <property name="deprecation.mode" value="true"/>
-    <property name="src.encoding" value="utf-8"/>
-    <property name="jdk.version" value="1.5"/>
-...
-```
-
-별도의 `build.properties` 파일로 구성할 수도 있습니다.
-
-```properties
-src.dir         = src/main/java
-resources.dir   = src/main/resources
-web.dir         = WebContent
-webinf.dir      = ${web.dir}/WEB-INF
-lib.dir         = ${webinf.dir}/lib
-classes.dir     = ${webinf.dir}/classes
-dist.dir        = dist
-```
-
-```xml
-...
-
-    <property file="build.properties"/>
-...
-```
-
-#### Classpath
-
-Java 빌드에 필요한 Libraries 경로, 즉 `classpath`의 경로 정보를 정의하고, `javac` Task에서 `<classpath refid="build.classpath"/>`와 같이 참조할 수 있습니다.
-
-```xml
-...
-    <path id="build.classpath">
-        <pathelement location="${classes.dir}"/>
-        <fileset dir="${lib.dir}">
-            <include name="*.jar"/>
-        </fileset>
-    </path>
-...
-```
-
-#### Targets 및 Tasks
-
-Target은 다른 Target에 의존(depend)될 수 있습니다. 예를 들어, 컴파일하는 Target과 배포를 생성하는 Target이 있을 수 있습니다. 먼저 컴파일을 하여야만 배포를 구축할 수 있습니다. `distribute` Target은 `compile` Target에 의존합니다.  
-예제에서는 **compile -> init -> clean**와 **package -> compile, copy-resources** 와 같이 Target 간 의존 관계가 있습니다.
-
-Task은 실행할 수 있는 코드 조각입니다.  
-Task에는 여러 속성(또는 원하는 경우 인수)이 있을 수 있습니다. 속성 값에는 Property에 대한 참조가 포함될 수 있습니다. 이러한 참조는 Task이 실행되기 전에 해결됩니다.
-
-Task에는 다음과 같은 공통 구조가 있습니다.
-
-```xml
-    <name attribute1="value1" attribute2="value2" ... />
-```
-
-[기본 제공(Built-in) Task](https://ant.apache.org/manual/tasklist.html) 세트가 있지만 [직접 작성](https://ant.apache.org/manual/develop.html#writingowntask)하는 것도 매우 쉽습니다.
-
-`clean` Target은 이전 빌드 및 배포 결과물이 생성된 디렉토리를 삭제합니다.
-
-```xml
-...
-    <target name="clean" description="clean up">
-        <delete dir="${classes.dir}"/>
-        <delete dir="${dist.dir}"/>
-    </target>
-...
-```
-
-`init` Target은 다시 빌드 및 배포 결과물이 생성될 디렉토리를 생성합니다.
-
-```xml
-...
-    <target name="init" depends="clean">
-        <!-- Create the time stamp -->
-        <tstamp/>
-        <!-- Create the build directory structure used by compile -->
-        <mkdir dir="${classes.dir}"/>
-        <!-- Create the distribution directory structure used by package -->
-        <mkdir dir="${dist.dir}"/>
-    </target>
-...
-```
-
-`compile` Target은 앞서 설정한 **classpath**을 참조하여 Java 소스를 컴파일합니다.
-
-```xml
-...
-    <target name="compile" depends="init" description="compile source code">
-        <echo message="Compile Java sources ..."/>
-        <javac srcdir="${src.dir}" destdir="${classes.dir}" debug="${debug.mode}" deprecation="${deprecation.mode}"
-               encoding="${src.encoding}" source="${jdk.version}" target="${jdk.version}">
-            <classpath refid="build.classpath"/>
-        </javac>
-    </target>
-...
-```
-
-`copy-resources` Target은 `*.xml` 또는 `*.properties`와 같은 리소스 파일들을 복사합니다.
-
-```xml
-...
-    <target name="copy-resources"
-            description="copy Java resources like xml and properties files">
-        <echo message="Copy Resource Files ..."/>
-        <copy todir="${classes.dir}">
-            <fileset dir="${resources.dir}">
-                <include name="**/*.xml"/>
-                <include name="**/*.properties"/>
-            </fileset>
-        </copy>
-    </target>
-...
-```
-
-`compile` Target은 배포를 위한 Zip 또는 Jar/War 파일을 패키징합니다.  
-`<include>`와 `<exclude>` 태그를 추가하여 특정 패턴에 해당하는 디렉토리 및 파일들을 추가하거나 제외할 수 있습니다.
-
-```xml
-...
-    <target name="package" depends="compile, copy-resources"
-            description="create a war file">
-        <!-- Create Zip file -->
-        <zip destfile="${dist.dir}/web-resources.zip">
-            <zipfileset dir="${web.dir}/resources" prefix="resources">
-                <exclude name="img/**/*" />
-            </zipfileset>
-        </zip>
-        <!-- Create WAR file -->
-        <war destfile="${dist.dir}/${ant.project.name}.war" webxml="${webinf.dir}/web.xml">
-            <manifest>
-                <attribute name="Built-Date" value="${TODAY}"/>
-            </manifest>
-            <fileset dir="${web.dir}">
-                <exclude name="**/yours/**/*"/>
-            </fileset>
-            <lib dir="${lib.dir}"/>
-            <classes dir="${classes.dir}">
-                <exclude name="**/yours/**/*"/>
-            </classes>
-        </war>
-    </target>
-...
-```
-
-### Maven 빌드 구성 (Build를 Maven으로 구성 시) 
+### ★★ Maven 빌드 구성 (Build를 Maven으로 구성 시) 
 
 [Apache Maven](https://maven.apache.org/index.html)는 프로젝트 객체 모델(Project Object Model, POM)이라는 개념을 바탕으로 프로젝트 의존성 관리, 프로젝트 라이프사이클 관리 기능 등을 제공하는 Java용 프로젝트 관리도구로 Apache Ant의 대안으로 만들어졌습니다.  
 Ant와 마찬가지로 프로젝트의 소스 코드를 컴파일(compile), 테스트(test), 패키지(package)할 수 있습니다.
@@ -576,8 +381,206 @@ Phase를 실행하면 해당 Phase와 연결된 플러그인 Goal이 실행됩�
   * [Install Plugin](http://maven.apache.org/plugins/maven-install-plugin/)에 의해 Jar/War 파일을 Local Repository에 등록합니다.
 
 
+### ★★ Ant 빌드 구성 (Build를 Ant로 구성 시)
 
-#### Ant 명령 실행 (Build를 Ant로 구성 시)
+[Apache Ant](https://ant.apache.org/)는 전통적인 Java 빌드 도구로, [Binary Distributions](https://ant.apache.org/bindownload.cgi) 페이지에서 다운로드 할 수 있습니다.
+
+현재 Apache Ant 1.9.16 및 1.10.12가 가장 최신의 사용 가능한 버전 입니다.
+
+* 1.9.16 release - 런타임 시 최소 Java 5 필요
+* 1.10.12 release - 런타임 시 최소 Java 8 필요
+
+Ant로 Java 애플리케이션을 빌드하려면 `build.xml` 파일이 필요합니다.  
+Apache Ant의 빌드 파일은 XML로 작성됩니다. 각 빌드 파일에는 하나의 `project`와 하나 이상의(기본) `target`이 포함됩니다. Target에는 `task` 요소가 포함됩니다.
+
+#### Project
+
+`project`은 세 가지 속성이 있습니다.
+
+* **name** : 프로젝트의 이름
+* **default** : `ant` 명령 실행 시 `target`을 지정하지 않은 경우 사용할 기본 `target` (예제에서는 `compile` Target이 실행)
+* **basedir** : 모든 경로(Path) 계산이 수행되는 기본 디렉토리
+
+선택적으로 프로젝트에 대한 설명을 최상위 `<description>` 요소로 제공할 수 있습니다.
+
+```xml
+<project name="spring-mvc-with-ant" default="compile" basedir=".">
+
+    <description>
+        Simple Ant build file
+    </description>
+...
+```
+
+#### Properties
+
+속성(property)은 빌드 프로세스를 커스터마이징하거나, 빌드 파일 내에서 반복적으로 사용되는 문자열을 변수처럼 지정하여 사용하는 기능 입니다.
+
+* **src.dir** : Java 소스 파일들이 있는 프로젝트의 소스 디렉토리
+* **resources.dir** : `*.xml` 또는 `*.properties`와 같은 파일들이 있는 프로젝트의 리소스 디렉토리
+* **web.dir** : CSS, JS, 이미지 파일들이 있는 Web 애플리케이션의 루트 디렉토리
+* **webinf.dir** : `web.xml`, `*-servlet.xml`, JSP 파일들이 있는 `WEB-INF` 디렉토리
+* **lib.dir** : Java 소스에서 참조하는 라이브러리 Jar 파일들이 위치하는 디렉토리
+* **classes.dir** : Java 소스 컴파일 후 `*.class` 파일들이 생성되는 디렉토리
+* **dist.dir** : 배포를 위한 패키징 결과물 Zip 또는 Jar/War 파일들이 생성되는 디렉토리
+
+```xml
+...
+    <property name="src.dir" location="src/main/java"/>
+    <property name="resources.dir" location="src/main/resources"/>
+    <property name="web.dir" location="WebContent"/>
+    <property name="webinf.dir" location="${web.dir}/WEB-INF"/>
+    <property name="lib.dir" location="${webinf.dir}/lib"/>
+    <property name="classes.dir" location="${webinf.dir}/classes"/>
+    <property name="dist.dir" location="dist"/>
+
+    <property name="debug.mode" value="true"/>
+    <property name="deprecation.mode" value="true"/>
+    <property name="src.encoding" value="utf-8"/>
+    <property name="jdk.version" value="1.5"/>
+...
+```
+
+별도의 `build.properties` 파일로 구성할 수도 있습니다.
+
+```properties
+src.dir         = src/main/java
+resources.dir   = src/main/resources
+web.dir         = WebContent
+webinf.dir      = ${web.dir}/WEB-INF
+lib.dir         = ${webinf.dir}/lib
+classes.dir     = ${webinf.dir}/classes
+dist.dir        = dist
+```
+
+```xml
+...
+
+    <property file="build.properties"/>
+...
+```
+
+#### Classpath
+
+Java 빌드에 필요한 Libraries 경로, 즉 `classpath`의 경로 정보를 정의하고, `javac` Task에서 `<classpath refid="build.classpath"/>`와 같이 참조할 수 있습니다.
+
+```xml
+...
+    <path id="build.classpath">
+        <pathelement location="${classes.dir}"/>
+        <fileset dir="${lib.dir}">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+...
+```
+
+#### Targets 및 Tasks
+
+Target은 다른 Target에 의존(depend)될 수 있습니다. 예를 들어, 컴파일하는 Target과 배포를 생성하는 Target이 있을 수 있습니다. 먼저 컴파일을 하여야만 배포를 구축할 수 있습니다. `distribute` Target은 `compile` Target에 의존합니다.  
+예제에서는 **compile -> init -> clean**와 **package -> compile, copy-resources** 와 같이 Target 간 의존 관계가 있습니다.
+
+Task은 실행할 수 있는 코드 조각입니다.  
+Task에는 여러 속성(또는 원하는 경우 인수)이 있을 수 있습니다. 속성 값에는 Property에 대한 참조가 포함될 수 있습니다. 이러한 참조는 Task이 실행되기 전에 해결됩니다.
+
+Task에는 다음과 같은 공통 구조가 있습니다.
+
+```xml
+    <name attribute1="value1" attribute2="value2" ... />
+```
+
+[기본 제공(Built-in) Task](https://ant.apache.org/manual/tasklist.html) 세트가 있지만 [직접 작성](https://ant.apache.org/manual/develop.html#writingowntask)하는 것도 매우 쉽습니다.
+
+`clean` Target은 이전 빌드 및 배포 결과물이 생성된 디렉토리를 삭제합니다.
+
+```xml
+...
+    <target name="clean" description="clean up">
+        <delete dir="${classes.dir}"/>
+        <delete dir="${dist.dir}"/>
+    </target>
+...
+```
+
+`init` Target은 다시 빌드 및 배포 결과물이 생성될 디렉토리를 생성합니다.
+
+```xml
+...
+    <target name="init" depends="clean">
+        <!-- Create the time stamp -->
+        <tstamp/>
+        <!-- Create the build directory structure used by compile -->
+        <mkdir dir="${classes.dir}"/>
+        <!-- Create the distribution directory structure used by package -->
+        <mkdir dir="${dist.dir}"/>
+    </target>
+...
+```
+
+`compile` Target은 앞서 설정한 **classpath**을 참조하여 Java 소스를 컴파일합니다.
+
+```xml
+...
+    <target name="compile" depends="init" description="compile source code">
+        <echo message="Compile Java sources ..."/>
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" debug="${debug.mode}" deprecation="${deprecation.mode}"
+               encoding="${src.encoding}" source="${jdk.version}" target="${jdk.version}">
+            <classpath refid="build.classpath"/>
+        </javac>
+    </target>
+...
+```
+
+`copy-resources` Target은 `*.xml` 또는 `*.properties`와 같은 리소스 파일들을 복사합니다.
+
+```xml
+...
+    <target name="copy-resources"
+            description="copy Java resources like xml and properties files">
+        <echo message="Copy Resource Files ..."/>
+        <copy todir="${classes.dir}">
+            <fileset dir="${resources.dir}">
+                <include name="**/*.xml"/>
+                <include name="**/*.properties"/>
+            </fileset>
+        </copy>
+    </target>
+...
+```
+
+`compile` Target은 배포를 위한 Zip 또는 Jar/War 파일을 패키징합니다.  
+`<include>`와 `<exclude>` 태그를 추가하여 특정 패턴에 해당하는 디렉토리 및 파일들을 추가하거나 제외할 수 있습니다.
+
+```xml
+...
+    <target name="package" depends="compile, copy-resources"
+            description="create a war file">
+        <!-- Create Zip file -->
+        <zip destfile="${dist.dir}/web-resources.zip">
+            <zipfileset dir="${web.dir}/resources" prefix="resources">
+                <exclude name="img/**/*" />
+            </zipfileset>
+        </zip>
+        <!-- Create WAR file -->
+        <war destfile="${dist.dir}/${ant.project.name}.war" webxml="${webinf.dir}/web.xml">
+            <manifest>
+                <attribute name="Built-Date" value="${TODAY}"/>
+            </manifest>
+            <fileset dir="${web.dir}">
+                <exclude name="**/yours/**/*"/>
+            </fileset>
+            <lib dir="${lib.dir}"/>
+            <classes dir="${classes.dir}">
+                <exclude name="**/yours/**/*"/>
+            </classes>
+        </war>
+    </target>
+...
+```
+
+
+
+#### Ant 명령 실행 
 
 Ant를 설치하였다면, 커맨드라인(CMD 또는 Linux 셸)에서 프로젝트의 `build.xml` 파일이 있는 경로로 이동한 후, `ant` 명령으로 간단하게 실행할 수 있습니다.
 
