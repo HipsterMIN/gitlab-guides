@@ -612,6 +612,264 @@ ant [options] [target [target2 [target3] ...]]
 
 
 
+### ★★ Gradle 빌드 구성
+
+[Gradle](https://gradle.org/)은 유연성과 성능에 중점을 둔 오픈소스 빌드 자동화 도구입니다. Gradle 빌드 스크립트는 [Groovy](https://groovy-lang.org/) 또는 [Kotlin](https://kotlinlang.org/) DSL을 사용하여 작성됩니다.
+
+* 고도로 사용자 지정 가능 — Gradle은 가장 기본적인 방식으로 사용자 지정 가능하고 확장 가능한 방식으로 모델링됩니다.
+* 빠름 — Gradle은 이전 실행의 출력을 재사용하고 변경된 입력만 처리하며 작업을 병렬로 실행하여 작업을 빠르게 완료합니다. Gradle은 거의 모든 시나리오에서 Maven에 비해 최소 2배 빨라집니다. (빌드 캐시를 사용하는 대규모 빌드의 경우 100배 더 빠름. [Gradle vs Maven 비교](https://gradle.org/maven-vs-gradle/) 참조)
+* 강력함 — Gradle은 Android용 공식 빌드 도구이며 Java, C++ 등 많은 인기 있는 언어 및 기술을 지원합니다.
+
+> [DSL(Domain Specific Language, 도메인 특화 언어)](https://www.jetbrains.com/ko-kr/mps/concepts/domain-specific-languages/)은 빌드 스크립트를 만드는 것과 같이 **한정된 주제** 내에서 **반복적인 일**을 하는 일반적인 프로그래밍 언어에 비해 특정 분야에 최적화된 프로그래밍 언어를 의미합니다.
+
+[Gradle 설치](https://docs.gradle.org/current/userguide/installation.html) 가이드에 따라 여러 방식으로 설치할 수 있습니다. 기존 구성된 Gradle 빌드를 실행하는 경우, 프로젝트에 [Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html#gradle_wrapper)가 있으면 Gradle을 설치할 필요가 없습니다. 프로젝트 루트에 있는 `gradlew` 또는 `gradlew.bat`으로 빌드를 실행할 수 있습니다.
+
+* Windows 시스템에서 Wrapper 배치 파일로 빌드 실행
+
+  ```bash
+  gradlew.bat build
+  ```
+
+* Linux 시스템에서 Wrapper shell 스크립트로 빌드 실행
+
+  ```bash
+  ./gradlew build
+  ```
+
+#### Build Script 파일
+
+`build.gradle` 파일은 빌드 구성 스크립트로 프로젝트, Plugins 및 Tasks을 정의합니다.  
+Gradle의 빌드 스크립트는 실행 가능한 코드로 볼 수 있으며, API에 의해 실행됩니다. 빌드 스크립트의 구문은 Gradle의 API에 매핑됩니다.
+
+Gradle 빌드 스크립트는 Kotlin DSL을 사용하여 작성할 수도 있지만, 예제에서는 Groovy DSL을 사용하였습니다.
+
+##### Project 객체
+
+Groovy는 Java 기반의 객체지향 언어이므로 그 속성과 메소드가 객체에 적용됩니다. 어떤 경우에는 객체가 암시적입니다. 특히 빌드 스크립트의 최상위 수준에서, 즉 `{}` 블록 내부에 중첩되지 않습니다.
+
+모든 Gradle 빌드는 하나 이상의 프로젝트로 구성됩니다. 프로젝트가 나타내는 것은 Gradle로 수행하는 작업에 따라 다릅니다. 예를 들어, 프로젝트는 라이브러리 JAR 또는 웹 애플리케이션을 나타낼 수 있습니다.
+
+`configurations`, `dependencies`, `plugins`, `repositories`, `group` 및 `version`는 모두 [org.gradle.api.Project](https://docs.gradle.org/current/dsl/org.gradle.api.Project.html)의 기본 속성(Properties)입니다.  
+이 외의 속성은 [Project의 Properties](https://docs.gradle.org/current/dsl/org.gradle.api.Project.html#N14D49) 섹션을 참고하십시오.
+
+"Spring MVC with Gradle" 예제 프로젝트에서는 아래의 속성을 적용하였습니다.
+
+```groovy
+group 'com.autoever.demo'
+version '1.0-SNAPSHOT'
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+```
+
+* `group`은 Maven의 `groupId`와 동일하게 이 프로젝트의 그룹입니다.
+* `version`은 이 프로젝트의 버전입니다.
+* `sourceCompatibility`은 `java` 플러그인에 의해 추가된 속성으로, Java 소스를 컴파일하는 데 사용되는 소스(Source) 호환성 정보입니다. Java 8 언어 기능을 사용하려면 '1.8'로 설정합니다.
+* `targetCompatibility`도 `java` 플러그인에 의해 추가된 속성으로, Java 소스를 컴파일하는 데 사용되는 대상(Target) 호환성 정보입니다. 컴파일된 클래스가 JVM 1.8과 호환되기 위해서는 `1.8`이어야 합니다.
+
+##### Plugins
+
+Gradle의 핵심은 의도적으로 실제 자동화를 위해 거의 제공하지 않습니다. Java 코드를 컴파일하는 기능과 같은 모든 유용한 기능은 플러그인에 의해 추가됩니다. 플러그인은 새로운 Task(예: [JavaCompile](https://docs.gradle.org/current/dsl/org.gradle.api.tasks.compile.JavaCompile.html)), 도메인 개체(예: [SourceSet](https://docs.gradle.org/current/dsl/org.gradle.api.tasks.SourceSet.html)), 규칙(예: Java 소스는 ​​`src/main/java`에 있음)을 추가할 뿐만 아니라 핵심 개체와 개체를 다른 플러그인에서 확장합니다.
+
+플러그인의 전역 고유 식별자 또는 이름인 플러그인 ID로 플러그인을 적용합니다.
+아래는 [Java 플러그인](https://docs.gradle.org/current/userguide/java_plugin.html)과 [War 플러그인](https://docs.gradle.org/current/userguide/war_plugin.html)을 적용합니다.
+
+```groovy
+plugins {
+    id 'java'
+    id 'war'
+}
+```
+
+##### Repositories
+
+Gradle은 Maven, Ivy 또는 플랫(flat) 디렉터리 형식을 기반으로 하는, 하나 이상의 리포지토리에서 의존성(Dependencies)을 해결할 수 있습니다.
+
+공개 바이너리 리포지토리를 활용하여 오픈 소스 의존성을 다운로드하고 사용할 수 있습니다. 인기 있는 공개 리포지토리에는 Maven Central과 Google Android 리포지토리가 있습니다. Gradle은 널리 사용되는 이러한 리포지토리에 대해 내장된 속기 표기법(shorthand notation)을 제공합니다.
+
+![Shortcut Repositories](images/08/gradle-dependency-management-shortcut-repositories.png "Shortcut Repositories")
+
+아래와 같이 선언하면 [Maven Central 저장소](https://repo.maven.apache.org/maven2/)를 사용할 수 있습니다.
+
+```groovy
+repositories {
+    mavenCentral()
+}
+```
+
+또한, 회사 네트워크 내에서만 액세스할 수 있는 [Nexus Repository](https://www.sonatype.com/products/repository-oss)와 같은 사내 Maven 저장소를 추가할 수 있습니다.
+
+```groovy
+repositories {
+    maven {
+        url "http://repo.mycompany.com/maven2"
+    }
+}
+```
+
+##### Dependencies
+
+`dependencies` 블록을 사용하여 프로젝트에서 사용하는 라이브러리의 의존성을 선언합니다.  
+Gradle에는 모듈, 파일, 프로젝트 등 다양한 의존성이 있으며, 가장 일반적인으로 모듈 의존성을 사용합니다. 모듈 의존성 선언은 문자열(String) 표기법과 Map 표기법을 사용하여 할 수 있습니다.
+
+다음 구문(Syntax)을 사용하여 의존성을 선언합니다.
+
+```groovy
+dependencies {
+    configurationName dependencyNotation
+}
+```
+
+* 문자열(group:name:version) 표기법
+
+    ```groovy
+    dependencies {
+        implementation('org.apache.commons:commons-lang3:3.3.2')
+    }
+    ```
+
+    또는
+
+    ```groovy
+    dependencies {
+        implementation 'org.apache.commons:commons-lang3:3.3.2'
+    }
+    ```
+
+* Map 표기법
+
+    ```groovy
+    dependencies {
+        compileOnly(group: 'javax.servlet', name: 'javax.servlet-api', version:'3.1.0')
+    }
+    ```
+
+    또는
+
+    ```groovy
+    dependencies {
+        compileOnly group: 'javax.servlet', name: 'javax.servlet-api', version:'3.1.0'
+    }
+    ```
+
+Java 플러그인에는 아래와 같은 의존성 구성(Dependency configurations)이 있습니다.  
+좀 더 상세한 내용은 [Java 플러그인의 의존성 관리](https://docs.gradle.org/current/userguide/java_plugin.html#sec:java_plugin_and_dependency_management) 섹션을 참고하십시오.
+
+* `implementation` : 구현 전용 의존성.
+* `api` : 컴파일 및 런타임 시에 대해 소비자에게 전이적으로 내보내는 의존성.
+* `compileOnly` : 런타임에 사용되지 않는 컴파일 시 전용 의존성. Maven의 `provided` 범위(scope)와 유사하게 작동하는 컴파일 시 필요하지만 런타임 시에는 필요하지 않는 라이브러인 경우 사용 (빌드 결과물에는 포함하지 않음)
+* `runtimeOnly` : 런타임 전용 의존성. 컴파일 시에는 필요 없고 런타임에만 필요한 의존성.
+* `testImplementation` : 테스트에 대한 구현 전용 의존성.
+
+> `api` 구성에 나타나는 의존성은 라이브러리의 컨슈머(consumer, 본 모듈을 의존하고 있는 모듈들)에게 전이적으로 노출되며, 컨슈머(consumer)의 컴파일 classpath에 나타납니다. 반면에 `implementation` 구성에서 나타나는 의존성은 컨슈머에게 노출되지 않으므로, 컨슈머의 컴파일 classpath로 노출되지 않습니다. 즉, "A(api) <- B <- C"로 의존 관계가 있는 경우 C에서 A를 접근할 수 있으나, "A(implementation) <- B <- C"의 경우 C에서 A를 접근할 수 없습니다.
+
+##### Profiles 및 Properties
+
+다음과 같이 구성하면 Maven의 Profiles과 마찬가지로 배포 환경에 따라 변경될 필요가 있는 속성(Properties)을 설정할 수 있습니다.
+
+* `sr/main/resources/config.properties` 파일에 아래와 같이 속성들을 정의합니다.
+
+    ```properties
+    jdbc.url        = ${jdbc_url}
+    jdbc.username   = ${jdbc_username}
+    jdbc.password   = ${jdbc_password}
+    ```
+
+* 프로젝트 루트에 `profile-local.gradle`, `profile-dev.gradle`, 및 `profile-prod.gradle` 파일을 생성하고 각각의 환경에 맞게 `ext.jdbc_url`, `ext.jdbc_username`, `ext.jdbc_password` 프로퍼티를 정의합니다.
+
+* `build.gradle` 파일에 아래 내용을 추가합니다.
+
+    ```groovy
+    ...
+    if (!hasProperty('env')) ext.env = 'local'
+    apply from: "profile-${env}.gradle"
+
+    processResources {
+        filesMatching('config.properties') {
+            expand(project.properties)
+        }
+    }
+    ...
+    ```
+
+* 환경 별 `gradle assemble` 명령을 `-Penv=[profile]` 옵션을 추가하여 실행 후 `build/resources/main/project.properties` 파일 내용을 확인합니다. (예: 개발 환경 - `gradle assemble -Penv=dev` 실행)
+
+##### Tasks
+
+일반적으로 Task은 플러그인을 적용하여 제공되므로 사용자가 직접 정의할 필요가 없으나, 아래와 같이 필요한 구성이 있으면 추가합니다. 예제는 JUnit 4.12를 사용하여 테스트하는 간단한 설정을 보여줍니다.
+
+```groovy
+dependencies {
+    testImplementation('junit:junit:4.12')
+}
+
+test {
+    useJUnit()
+}
+```
+
+Java 플러그인은 Java 플러그인이 자동으로 적용하는 [Base 플러그인](https://docs.gradle.org/current/userguide/base_plugin.html#sec:base_tasks)에 의해 정의된 라이프사이클 태스크에 일부 자체 태스트을 첨부하고, 몇 가지 다른 라이프사이클 태스크도 추가합니다.  
+Java 플러그인을 적용하면 다음과 같은 [Lifecycle Tasks](https://docs.gradle.org/current/userguide/java_plugin.html#lifecycle_tasks)을 실행할 수 있습니다.
+
+* `assemble`
+  * `jar` 태스트 및 `archives` 구성에 연결된 아티팩트를 생성하는 다른 모든 태스트에 의존.
+  * 프로젝트 내의 모든 아키이브를 취합하는 집계(Aggregate) 태스크. (Base 플러그인에 의해 추가됨)
+* `check`
+  * `test` 태스트에 의존.
+  * 테스트 실행과 같은 검증(Verification) 작업을 수행하는 집계 태스크. (Base 플러그인에 의해 추가됨)
+* `build`
+  * `check`, `assemble` 태스트에 의존.
+  * 프로젝트의 전체 빌드를 수행하는 집계 태스크. (Base 플러그인에 의해 추가됨)
+* `buildNeeded`
+  * `build` 태스트 및 `testRuntimeClasspath` 구성에 의존성이 있는 모든 프로젝트의 `buildNeeded` 태스트에 의존.
+  * 프로젝트 및 이 프로젝트가 의존하는 모든 프로젝트의 전체 빌드를 수행.
+* `buildDependents`
+  * `build` 태스트 및 해당 `testRuntimeClasspath` 구성에서 이 프로젝트를 의존성으로 포함하는 모든 프로젝트의 `buildDependents` 태스크에 의존.
+  * 프로젝트 및 이 프로젝트에 의존하는 모든 프로젝트의 전체 빌드를 수행.
+* `buildConfigName` — 태스크 규칙
+  * `ConfigName`이라고 명명된 구성에 연결된 아티팩트를 생성하는 모든 태스크에 의존.
+  * 지정된 구성에 대한 아티팩트를 취합(Assemble). (Base 플러그인에 의해 추가됨)
+* `uploadConfigName` — 태스크 규칙, type: [Upload](https://docs.gradle.org/current/dsl/org.gradle.api.tasks.Upload.html)
+  * `ConfigName`이라고 명명된 구성에 연결된 아티팩트를 생성하는 모든 태스크에 의존.
+  * 지정된 구성에 대한 아티팩트를 취합하고 업로드. (Base 플러그인에 의해 추가됨)
+
+다음 다이어그램은 이러한 태스크 간의 관계를 보여줍니다.
+
+![Java plugin - tasks](images/08/gradle-java-plugin-tasks.png "Java plugin - tasks")
+
+`tasks.register()`를 사용하여 새로운 Task를 추가할 수 있습니다.  
+아래는 이미지를 제외한 CSS, Javascript 파일들을 Zip 파일로 압축하여 `build/dist` 경로에 생성하는 태스크입니다.
+
+```groovy
+tasks.register('zip', Zip) {
+    from 'src/main/webapp/resources'
+    archiveFileName = 'web-resources.zip'
+    destinationDirectory = layout.buildDirectory.dir('dist')
+    exclude '**/img/'
+}
+```
+
+#### Settings 파일
+
+Gradle에서는 빌드 스크립트 파일 외에 설정 파일인 `settings.gradle`을 정의해야 합니다.
+
+단일 프로젝트 빌드의 설정입니다. 단일 프로젝트 빌드의 경우 설정 파일은 선택 사항입니다.([Gradle 프로젝트 구성](https://docs.gradle.org/current/userguide/organizing_gradle_projects.html#organizing_gradle_projects) 참조)
+
+```groovy
+rootProject.name = 'spring-mvc-with-gradle'
+```
+
+하나의 루트 프로젝트와 하나 이상의 하위 프로젝트로 구성된 다중 프로젝트(Multi-Project)는 아래와 같이 구성할 수 있습니다.
+
+```groovy
+rootProject.name = 'simple-multi-module'    // 전체 프로젝트의 이름을 설정
+include 'simple-weather', 'simple-webapp'   // 이 빌드의 일부로 두 개의 하위 프로젝트 구성
+```
+
+* `rootProject.name` : 빌드에 이름을 할당합니다. 이는 빌드가 있는 디렉토리에 따라 빌드 이름을 지정하는 기본 동작을 재정의합니다. 프로젝트가 공유되는 경우 폴더가 변경될 수 있으므로 고정 이름을 설정하는 것이 좋습니다. (예: Git 저장소의 루트)
+* `include` : 빌드가 실제 코드와 빌드 로직을 포함하는 하나 이상의 하위 프로젝트로 구성됨을 정의합니다.
+
+
+
 
 ## GitLab CI/CD 환경 변수 생성
 
