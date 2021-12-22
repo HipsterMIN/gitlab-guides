@@ -53,6 +53,13 @@
 
   ![로컬 저장소](images/03/local_repositories.png "로컬 저장소")
 
+* (적합한 작업중인 복사본 경로가 아니라는 메시지가 나올때)`git init` 명령을 실행하여 Git 로컬 저장소를 생성(초기화)합니다.
+
+  ```bash
+  cd existing_folder # 코드베이스 루트 디렉토리로 이동
+  git init
+  ```
+
 * **탐색** 버튼을 클릭한 후, **작업 경로**(코드베이스 폴더)를 선택합니다. 작업 경로를 선택하면 이름 필드는 자동으로 채워집니다. **추가** 버튼을 클릭합니다.
 
   ![Add a repository](images/03/add_local_repository.png "Add a repository")
