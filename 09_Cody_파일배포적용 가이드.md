@@ -13,9 +13,9 @@
 2. 로컬PC 환경에서 dev 브랜치를 확인 후 프로젝트 최상단 경로에 .gitlab-ci.yml 파일을 추가합니다. 파일내용은 아래 링크를 참고합니다.<br>
 https://cody-scm.autoever.com/guides/ci-cd-examples/file-base-deploy-exam/-/blob/dev/.gitlab-ci.yml
 
-3. 해당 파일 내용 중 아래 정보는 각 시스템에 맞게 수정 필요합니다
-dev_deploy 부분은 dev 브랜치가 commit 되는 경우 실행되며, 개발서버 정보 기입 필요합니다.
-dev_prod 부분에는 dev 브랜치에서 master 브랜치로 merge 되는경우 실행되며, 운영서버 정보 기입 필요합니다.
+3. 해당 파일 내용 중 아래 정보는 각 시스템에 맞게 수정 필요합니다.<br>
+dev_deploy 부분은 dev 브랜치가 commit 되는 경우 실행되며, 개발서버 정보 기입 필요합니다.<br>
+dev_prod 부분에는 dev 브랜치에서 master 브랜치로 merge 되는경우 실행되며, 운영서버 정보 기입 필요합니다.<br>
 ```
 dev_prod:
   stage: deploy
